@@ -64,16 +64,20 @@ impl Address {
             } else {
                 database.name.clone()
             },
-            user: if let Some(user) = database.user.clone() {
+            user: if let Some(user) = user.server_user.clone() {
                 user
-            } else if let Some(user) = user.server_user.clone() {
+            } else if let Some(user) = database.user.clone() {
                 user
             } else {
                 user.name.clone()
             },
             passwords: if server_auth.is_external_identity() {
                 vec![]
-            } else if let Some(password) = database.password.clone() {
+            } else if let Some(password) = database
+                .password
+                .clone()
+                .filter(|_| user.server_user.is_none())
+            {
                 vec![password.into()]
             } else if let Some(password) = user.server_password.clone() {
                 vec![password.into()]
@@ -307,6 +311,79 @@ mod test {
         assert_eq!(address.database_name, "not_pgdog");
         assert_eq!(address.user, "alice");
         assert_eq!(address.passwords.first().unwrap(), "hunter3");
+    }
+
+    #[test]
+    fn test_mapped_server_user_overrides_database_credentials() {
+        for role in [Role::Primary, Role::Replica, Role::Auto] {
+            for shard in [0, 1] {
+                for server_password in [None, Some("readonly-server-pass".to_string())] {
+                    let database = Database {
+                        name: "pgdog".into(),
+                        user: Some("writer".into()),
+                        password: Some("writer-pass".into()),
+                        role,
+                        shard,
+                        ..Default::default()
+                    };
+                    let user = User {
+                        name: "readonly_client".into(),
+                        password: Some("readonly-client-pass".into()),
+                        server_user: Some("readonly".into()),
+                        server_password: server_password.clone(),
+                        ..Default::default()
+                    };
+
+                    let address = Address::new(&database, &user, shard);
+                    assert_eq!(address.user, "readonly");
+                    assert_eq!(address.configured_role, role);
+                    assert_eq!(address.passwords.len(), 1);
+                    assert_eq!(
+                        address.passwords[0],
+                        server_password.as_deref().unwrap_or("readonly-client-pass")
+                    );
+                }
+            }
+        }
+    }
+
+    #[test]
+    fn test_unmapped_user_preserves_database_password_priority() {
+        let database = Database {
+            user: Some("writer".into()),
+            password: Some("shard-pass".into()),
+            ..Default::default()
+        };
+        let user = User {
+            name: "client".into(),
+            password: Some("client-pass".into()),
+            server_password: Some("server-pass".into()),
+            ..Default::default()
+        };
+
+        let address = Address::new(&database, &user, 0);
+        assert_eq!(address.user, "writer");
+        assert_eq!(address.passwords.len(), 1);
+        assert_eq!(address.passwords[0], "shard-pass");
+    }
+
+    #[test]
+    fn test_mapped_server_user_without_password_does_not_use_database_password() {
+        let database = Database {
+            user: Some("writer".into()),
+            password: Some("writer-pass".into()),
+            ..Default::default()
+        };
+        let user = User {
+            name: "client".into(),
+            server_user: Some("readonly".into()),
+            password_hash: Some("client-hash".into()),
+            ..Default::default()
+        };
+
+        let address = Address::new(&database, &user, 0);
+        assert_eq!(address.user, "readonly");
+        assert!(address.passwords.is_empty());
     }
 
     #[test]
