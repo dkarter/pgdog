@@ -323,14 +323,14 @@
           "minimum": 0
         },
         "server_password": {
-          "description": "Which password to connect with when creating backend connections from PgDog to PostgreSQL. By default, the password configured in `password` is used. This setting allows you to override this configuration and use a different password, decoupling server passwords from user passwords given to clients.\n\n**Note:** Values specified in `pgdog.toml` take priority over this configuration.\n\n<https://docs.pgdog.dev/configuration/users.toml/users/#server_password>",
+          "description": "Which password to connect with when creating backend connections from PgDog to PostgreSQL. By default, the password configured in `password` is used. This setting allows you to override this configuration and use a different password, decoupling server passwords from user passwords given to clients.\n\n**Note:** When `server_user` is set, this password takes priority over database-level passwords. Without `server_user`, passwords specified in `pgdog.toml` retain priority.\n\n<https://docs.pgdog.dev/configuration/users.toml/users/#server_password>",
           "type": [
             "string",
             "null"
           ]
         },
         "server_user": {
-          "description": "Which user to connect with when creating backend connections from PgDog to PostgreSQL. By default, the user configured in `name` is used. This setting allows you to override this configuration and use a different user.\n\n**Note:** Values specified in `pgdog.toml` take priority over this configuration.\n\n<https://docs.pgdog.dev/configuration/users.toml/users/#server_user>",
+          "description": "Which user to connect with when creating backend connections from PgDog to PostgreSQL. By default, the user configured in `name` is used. This setting allows you to override this configuration and use a different user.\n\n**Note:** When set, this mapping takes priority over `user` in `pgdog.toml` on every shard, primary, and replica. Database-level passwords are ignored; `server_password`, or this user's plain-text passwords, authenticate the mapped role.\n\n<https://docs.pgdog.dev/configuration/users.toml/users/#server_user>",
           "type": [
             "string",
             "null"

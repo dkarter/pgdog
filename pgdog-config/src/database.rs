@@ -159,9 +159,13 @@ pub struct Database {
     pub database_name: Option<String>,
     /// Name of the PostgreSQL user to connect with when creating backend connections from PgDog to Postgres. If not set, this defaults to `name` in users.toml.
     ///
+    /// **Note:** An explicit `server_user` in users.toml takes priority on every backend.
+    ///
     /// <https://docs.pgdog.dev/configuration/pgdog.toml/databases/#user>
     pub user: Option<String>,
     /// Password to use when creating backend connections to PostgreSQL. If not set, this defaults to `password` in users.toml.
+    ///
+    /// **Note:** Ignored when the client has an explicit `server_user` mapping in users.toml; the mapped user's credentials are used instead.
     ///
     /// <https://docs.pgdog.dev/configuration/pgdog.toml/databases/#password>
     pub password: Option<String>,

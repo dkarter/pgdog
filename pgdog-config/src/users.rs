@@ -319,13 +319,13 @@ pub struct User {
     pub pooler_mode: Option<PoolerMode>,
     /// Which user to connect with when creating backend connections from PgDog to PostgreSQL. By default, the user configured in `name` is used. This setting allows you to override this configuration and use a different user.
     ///
-    /// **Note:** Values specified in `pgdog.toml` take priority over this configuration.
+    /// **Note:** When set, this mapping takes priority over `user` in `pgdog.toml` on every shard, primary, and replica. Database-level passwords are ignored; `server_password`, or this user's plain-text passwords, authenticate the mapped role.
     ///
     /// <https://docs.pgdog.dev/configuration/users.toml/users/#server_user>
     pub server_user: Option<String>,
     /// Which password to connect with when creating backend connections from PgDog to PostgreSQL. By default, the password configured in `password` is used. This setting allows you to override this configuration and use a different password, decoupling server passwords from user passwords given to clients.
     ///
-    /// **Note:** Values specified in `pgdog.toml` take priority over this configuration.
+    /// **Note:** When `server_user` is set, this password takes priority over database-level passwords. Without `server_user`, passwords specified in `pgdog.toml` retain priority.
     ///
     /// <https://docs.pgdog.dev/configuration/users.toml/users/#server_password>
     pub server_password: Option<String>,
